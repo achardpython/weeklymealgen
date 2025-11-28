@@ -302,7 +302,12 @@
                 </div>
                 
                 <div>
-                    <div class="section-title">All Meals (<span id="mealCount">0</span>)</div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                        <div class="section-title" style="margin-bottom: 0;">All Meals (<span id="mealCount">0</span>)</div>
+                        <button class="btn btn-danger" onclick="resetToDefaults()" style="font-size: 0.875rem; padding: 0.5rem 1rem;">
+                            Reset to Defaults
+                        </button>
+                    </div>
                     <div id="mealList"></div>
                 </div>
             </div>
@@ -312,15 +317,19 @@
     <script>
         const defaultMeals = [
             { id: 1, name: "Spaghetti Bolognese", carb: "Pasta", meat: "Beef" },
-            { id: 2, name: "Chicken Stir Fry", carb: "Rice", meat: "Chicken" },
-            { id: 3, name: "Fish and Chips", carb: "Potatoes", meat: "Fish" },
-            { id: 4, name: "Shepherd's Pie", carb: "Potatoes", meat: "Lamb" },
-            { id: 5, name: "Chicken Curry", carb: "Rice", meat: "Chicken" },
-            { id: 6, name: "Pork Chops with Mash", carb: "Potatoes", meat: "Pork" },
-            { id: 7, name: "Beef Tacos", carb: "Tortilla", meat: "Beef" },
-            { id: 8, name: "Salmon with New Potatoes", carb: "Potatoes", meat: "Fish" },
-            { id: 9, name: "Chicken Pasta Bake", carb: "Pasta", meat: "Chicken" },
-            { id: 10, name: "Roast Dinner", carb: "Potatoes", meat: "Beef" }
+            { id: 2, name: "Chicken Tagliatelle", carb: "Pasta", meat: "Chicken" },
+            { id: 3, name: "Lasagna", carb: "Pasta", meat: "Beef" },
+            { id: 4, name: "Feta Spinach Salmon Pasta", carb: "Pasta", meat: "Salmon" },
+            { id: 5, name: "Feta Tomato Pasta", carb: "Pasta", meat: "Salami" },
+            { id: 6, name: "Bacon Pasta", carb: "Pasta", meat: "Bacon" },
+            { id: 7, name: "Salmon", carb: "Potatoes", meat: "Salmon" },
+            { id: 8, name: "Chicken Roast Dinner", carb: "Potatoes", meat: "Chicken" },
+            { id: 9, name: "Beef Roast Dinner", carb: "Potatoes", meat: "Beef" },
+            { id: 10, name: "Steak", carb: "Chips", meat: "Beef" },
+            { id: 11, name: "Burgers", carb: "Chips", meat: "Beef" },
+            { id: 12, name: "Stir Fry", carb: "Noodles", meat: "Chicken" },
+            { id: 13, name: "Quiche", carb: "Potatoes", meat: "Bacon" },
+            { id: 14, name: "Chicken and Ribs", carb: "Chips", meat: "Chicken" }
         ];
 
         let meals = [];
@@ -352,26 +361,36 @@
             
             const numDays = parseInt(document.getElementById('numDays').value) || 7;
             const plan = [];
+            const usedMealIds = new Set();
             let lastCarb = null;
             let lastMeat = null;
             
             for (let i = 0; i < numDays; i++) {
                 let validMeals = meals.filter(meal => 
-                    meal.carb !== lastCarb && meal.meat !== lastMeat
+                    !usedMealIds.has(meal.id) &&
+                    meal.carb !== lastCarb && 
+                    meal.meat !== lastMeat
                 );
                 
                 if (validMeals.length === 0) {
                     validMeals = meals.filter(meal =>
-                        meal.carb !== lastCarb || meal.meat !== lastMeat
+                        !usedMealIds.has(meal.id) &&
+                        (meal.carb !== lastCarb || meal.meat !== lastMeat)
                     );
                 }
                 
                 if (validMeals.length === 0) {
-                    validMeals = meals;
+                    validMeals = meals.filter(meal => !usedMealIds.has(meal.id));
+                }
+                
+                if (validMeals.length === 0) {
+                    alert("Not enough meals for " + numDays + " days without repeats. Please add more meals or reduce the number of days.");
+                    return;
                 }
                 
                 const chosen = validMeals[Math.floor(Math.random() * validMeals.length)];
                 plan.push(chosen);
+                usedMealIds.add(chosen.id);
                 lastCarb = chosen.carb;
                 lastMeat = chosen.meat;
             }
@@ -450,6 +469,14 @@
                     </button>
                 </div>
             `).join('');
+        }
+        
+        function resetToDefaults() {
+            if (confirm("This will delete all your current meals and restore the default meal list. Are you sure?")) {
+                meals = JSON.parse(JSON.stringify(defaultMeals));
+                saveMeals();
+                renderMealList();
+            }
         }
         
         loadMeals();
